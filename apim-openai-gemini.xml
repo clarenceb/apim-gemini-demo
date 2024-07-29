@@ -1,0 +1,98 @@
+<!--
+    - Policies are applied in the order they appear.
+    - Position <base/> inside a section to inherit policies from the outer scope.
+    - Comments within policies are not preserved.
+-->
+<!-- Add policies as children to the <inbound>, <outbound>, <backend>, and <on-error> elements -->
+    <policies>
+        <!-- Throttle, authorize, validate, cache, or transform the requests -->
+        <inbound>
+            <base />
+            <set-variable name="original-body" value="@(context.Request.Body.As<string>(preserveContent: true))" />
+            <set-backend-service backend-id="gemini15-flash" />
+            <rewrite-uri template="/" copy-unmatched-params="false" />
+            <set-body>@{
+                var originalBody = context.Variables.GetValueOrDefault<string>("original-body");
+                var requestBody = JObject.Parse(originalBody);
+                var systemMessage = requestBody["messages"].First(m => m["role"].ToString() == "system")["content"].ToString();
+                var userMessage = requestBody["messages"].First(m => m["role"].ToString() == "user")["content"].ToString();
+    
+                var geminiRequest = new JObject(
+                    new JProperty("system_instruction", new JObject(
+                        new JProperty("parts", new JObject(
+                            new JProperty("text", systemMessage)
+                        ))
+                    )),
+                    new JProperty("contents", new JArray(
+                        new JObject(
+                            new JProperty("role", "user"),
+                            new JProperty("parts", new JArray(
+                                new JObject(
+                                    new JProperty("text", userMessage)
+                                )
+                            ))
+                        )
+                    ))
+                );
+    
+                return geminiRequest.ToString();
+            }</set-body>
+        </inbound>
+        <!-- Control if and how the requests are forwarded to services  -->
+        <backend>
+            <base />
+        </backend>
+        <!-- Customize the responses -->
+        <outbound>
+            <base />
+            <set-variable name="response-body" value="@(context.Response.Body.As<string>(preserveContent: true))" />
+            <set-body>@{
+                var originalBody = context.Variables.GetValueOrDefault<string>("response-body");
+                var responseBody = JObject.Parse(originalBody);
+                var candidate = responseBody["candidates"].First();
+                var messageContent = candidate["content"]["parts"].First()["text"].ToString();
+                var finishReason = candidate["finishReason"].ToString().ToLower();
+                var totalTokens = responseBody["usageMetadata"]["totalTokenCount"].ToObject<int>();
+                var promptTokens = responseBody["usageMetadata"]["promptTokenCount"].ToObject<int>();
+                var completionTokens = responseBody["usageMetadata"]["candidatesTokenCount"].ToObject<int>();
+    
+                var azureResponse = new JObject(
+                    new JProperty("choices", new JArray(
+                        new JObject(
+                            new JProperty("finish_reason", finishReason),
+                            new JProperty("message", new JObject(
+                                new JProperty("content", messageContent),
+                                new JProperty("role", "assistant")
+                            ))
+                        )
+                    )),
+                    new JProperty("usage", new JObject(
+                        new JProperty("completion_tokens", completionTokens),
+                        new JProperty("prompt_tokens", promptTokens),
+                        new JProperty("total_tokens", totalTokens)
+                    ))
+                );
+    
+                return azureResponse.ToString();
+            }</set-body>
+            <set-variable name="totalTokens" value="@{
+                    var originalBody = context.Variables.GetValueOrDefault<string>("response-body");
+                    var responseBody = JObject.Parse(originalBody);
+                    var candidate = responseBody["candidates"].First();
+                    var totalTokens = responseBody["usageMetadata"]["totalTokenCount"].ToObject<int>();
+                    return totalTokens.ToString();
+            }" />
+            <emit-metric name="Total Tokens" value="@(Convert.ToDouble(context.Variables.GetValueOrDefault<string>("totalTokens")))">
+                <dimension name="User ID" value="@(context.Request.Headers.GetValueOrDefault("x-user-id", "N/A"))" />
+                <dimension name="API ID" />
+                <dimension name="Operation ID" />
+                <dimension name="Subscription ID" />
+                <dimension name="Client IP" value="@(context.Request.IpAddress)" />
+                <dimension name="Model" value="@(context.Request.MatchedParameters["deployment-id"])" />
+            </emit-metric>
+        </outbound>
+        <!-- Handle exceptions and customize error responses  -->
+        <on-error>
+            <base />
+        </on-error>
+    </policies>

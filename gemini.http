@@ -1,0 +1,102 @@
+@google_api_key={{$dotenv GOOGLE_API_KEY}}
+@apim_api_key={{$dotenv APIM_API_KEY}}
+@apim_name={{$dotenv APIM_NAME}}
+@aoai_api_version={{$dotenv AOAI_API_VERSION}}
+@gemini_model=gemini-1.5-flash
+
+###
+# generateContent: Text-only input
+POST https://generativelanguage.googleapis.com/v1beta/models/{{gemini_model}}:generateContent?key={{google_api_key}}
+content-type: application/json
+
+{
+      "contents": [{
+        "parts":[{
+          "text": "What is the capital of France?"
+        }]
+    }]
+}
+
+###
+# generateContent: Multi-turn conversations (chat)
+POST https://generativelanguage.googleapis.com/v1beta/models/{{gemini_model}}:generateContent?key={{google_api_key}}
+content-type: application/json
+
+{
+      "contents": [
+        {"role":"user",
+         "parts":[{
+           "text": "Write the first line of a story about a magic backpack."}]},
+        {"role": "model",
+         "parts":[{
+           "text": "In the bustling city of Meadow brook, lived a young girl named Sophie. She was a bright and curious soul with an imaginative mind."}]},
+        {"role": "user",
+         "parts":[{
+           "text": "Can you set it in a quiet village in 1600s France?"}]},
+      ]
+}
+
+###
+# generateContent: Multi-turn conversations (chat) with system instructions
+POST https://generativelanguage.googleapis.com/v1beta/models/{{gemini_model}}:generateContent?key={{google_api_key}}
+content-type: application/json
+
+{      
+      "system_instruction": {
+        "parts": {
+            "text": "You a a drunken sailor with a hiccuping problem."}},
+      "contents": [
+        {"role":"user",
+         "parts":[{
+           "text": "Write the first line of a story about a pirate ship."}]}
+      ]
+}
+
+###
+# countTokens: Count tokens before sending and content to the model
+POST https://generativelanguage.googleapis.com/v1beta/models/{{gemini_model}}:countTokens?key={{google_api_key}}
+content-type: application/json
+
+{
+    "contents": [{
+        "parts":[{
+            "text": "What is the capital of France?"
+        }]
+    }]
+}
+
+###
+# Gemini chat: via APIM with Azure OpenAI endpoint and body (payload)
+POST https://{{apim_name}}.azure-api.net/openai-demo/openai/deployments/{{gemini_model}}/chat/completions?api-version={{aoai_api_version}}
+content-type: application/json
+api-key: {{apim_api_key}}
+
+{
+  "messages": [
+    {
+        "role": "system",
+        "content": "You are a drunken sailor with a hiccuping problem."
+    },
+    {
+        "role": "user",
+        "content": "Write the first line of a story about a pirate ship."
+    }
+  ]
+}
+
+###
+# Gemini chat: via APIM with Gemini endpoint (passthrough)
+POST https://{{apim_name}}.azure-api.net/openai-demo/v1beta/models/{{gemini_model}}:generateContent
+content-type: application/json
+api-key: {{apim_api_key}}
+
+{      
+      "system_instruction": {
+        "parts": {
+            "text": "You a a drunken sailor with a hiccuping problem."}},
+      "contents": [
+        {"role":"user",
+         "parts":[{
+           "text": "Write the first line of a story about a pirate ship."}]}
+      ]
+}

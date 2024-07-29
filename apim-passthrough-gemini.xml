@@ -1,0 +1,42 @@
+<!--
+    - Policies are applied in the order they appear.
+    - Position <base/> inside a section to inherit policies from the outer scope.
+    - Comments within policies are not preserved.
+-->
+<!-- Add policies as children to the <inbound>, <outbound>, <backend>, and <on-error> elements -->
+    <policies>
+        <!-- Throttle, authorize, validate, cache, or transform the requests -->
+        <inbound>
+            <base />
+            <set-backend-service backend-id="gemini15-flash" />
+            <rewrite-uri template="/" copy-unmatched-params="false" />
+        </inbound>
+        <!-- Control if and how the requests are forwarded to services  -->
+        <backend>
+            <base />
+        </backend>
+        <!-- Customize the responses -->
+        <outbound>
+            <base />
+            <set-variable name="response-body" value="@(context.Response.Body.As<string>(preserveContent: true))" />
+            <set-variable name="totalTokens" value="@{
+                    var originalBody = context.Variables.GetValueOrDefault<string>("response-body");
+                    var responseBody = JObject.Parse(originalBody);
+                    var candidate = responseBody["candidates"].First();
+                    var totalTokens = responseBody["usageMetadata"]["totalTokenCount"].ToObject<int>();
+                    return totalTokens.ToString();
+            }" />
+            <emit-metric name="Total Tokens" value="@(Convert.ToDouble(context.Variables.GetValueOrDefault<string>("totalTokens")))">
+                <dimension name="User ID" value="@(context.Request.Headers.GetValueOrDefault("x-user-id", "N/A"))" />
+                <dimension name="API ID" />
+                <dimension name="Operation ID" />
+                <dimension name="Subscription ID" />
+                <dimension name="Client IP" value="@(context.Request.IpAddress)" />
+                <dimension name="Model" value="gemini-1.5-flash" />
+            </emit-metric>
+        </outbound>
+        <!-- Handle exceptions and customize error responses  -->
+        <on-error>
+            <base />
+        </on-error>
+    </policies>
