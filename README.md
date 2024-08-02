@@ -32,7 +32,7 @@ In APIM, set the backend for Gemini in the <inbound/> policy section and rewrite
 
 ### generateContent: Text-only input
 
-```http
+```sh
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{google_api_key}}
 content-type: application/json
 
@@ -91,7 +91,7 @@ Sample response:
 
 ### generateContent: Multi-turn conversations (chat)
 
-```http
+```sh
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{google_api_key}}
 content-type: application/json
 
@@ -156,7 +156,7 @@ Sample response:
 
 ### generateContent: Multi-turn conversations (chat) with system instructions
 
-```http
+```sh
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{google_api_key}}
 content-type: application/json
 
@@ -218,7 +218,7 @@ Sample response:
 
 ### countTokens: Count tokens before sending and content to the model
 
-```http
+```sh
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:countTokens?key={{google_api_key}}
 content-type: application/json
 {
@@ -242,7 +242,7 @@ Sample response:
 
 ### Azure OpenAI chat: Multi-turn conversations (chat)
 
-```http
+```sh
 @aoai_api_key={{$dotenv AOAI_API_KEY}}
 @aoai_name={{$dotenv AOAI_NAME}}
 
