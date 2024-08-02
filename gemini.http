@@ -2,7 +2,7 @@
 @apim_api_key={{$dotenv APIM_API_KEY}}
 @apim_name={{$dotenv APIM_NAME}}
 @aoai_api_version={{$dotenv AOAI_API_VERSION}}
-@gemini_model=gemini-1.5-flash
+@gemini_model={{$dotenv GEMINI_MODEL}}
 
 ###
 # generateContent: Text-only input

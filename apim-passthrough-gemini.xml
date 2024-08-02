@@ -26,7 +26,7 @@
                     var totalTokens = responseBody["usageMetadata"]["totalTokenCount"].ToObject<int>();
                     return totalTokens.ToString();
             }" />
-            <emit-metric name="Total Tokens" value="@(Convert.ToDouble(context.Variables.GetValueOrDefault<string>("totalTokens")))">
+            <emit-metric name="Total Tokens" value="@(Convert.ToDouble(context.Variables.GetValueOrDefault<string>("totalTokens")))" namespace="openai">
                 <dimension name="User ID" value="@(context.Request.Headers.GetValueOrDefault("x-user-id", "N/A"))" />
                 <dimension name="API ID" />
                 <dimension name="Operation ID" />

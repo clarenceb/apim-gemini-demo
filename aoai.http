@@ -1,11 +1,12 @@
 @aoai_api_key={{$dotenv AOAI_API_KEY}}
 @apim_api_key={{$dotenv APIM_API_KEY}}
 @aoai_name={{$dotenv AOAI_NAME}}
-@deployment_name={{$dotenv DEPLOYMENT}}
+@deployment_name={{$dotenv DEPLOYMENT_NAME}}
 @aoai_api_version={{$dotenv AOAI_API_VERSION}}
+@apim_name={{$dotenv APIM_NAME}}
 
 ###
-# chat: Multi-turn conversations (chat) - gpt-35-turbo
+# chat: Direct AOAI access - Multi-turn conversations (chat) - gpt-35-turbo
 POST https://{{aoai_name}}.openai.azure.com/openai/deployments/{{deployment_name}}/chat/completions?api-version={{aoai_api_version}}
 content-type: application/json
 api-key: {{aoai_api_key}}
@@ -24,8 +25,8 @@ api-key: {{aoai_api_key}}
 }
 
 ###
-# chat: via APIM with Azure OpenAI endpoint
-POST https://{{aoai_name}}.azure-api.net/openai/deployments/{{deployment_name}}/chat/completions?api-version={{aoai_api_version}}
+# chat: Proxy via APIM with Azure OpenAI endpoint - Multi-turn conversations (chat) - gpt-35-turbo
+POST https://{{apim_name}}.azure-api.net/openai/deployments/{{deployment_name}}/chat/completions?api-version={{aoai_api_version}}
 content-type: application/json
 api-key: {{apim_api_key}}
 
